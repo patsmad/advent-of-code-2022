@@ -20,32 +20,47 @@ class Tree:
         self.x = x
         self.y = y
         self.height = height
-        self.other_trees = []
+        self.left_trees = []
+        self.right_trees = []
+        self.up_trees = []
+        self.down_trees = []
 
-    def add_tree(self, tree):
-        self.other_trees.append(tree)
+    def add_left_tree(self, tree):
+        self.left_trees.append(tree)
 
-    def to_the_left(self, tree):
-        return self.x - tree.x
+    def add_right_tree(self, tree):
+        self.right_trees.append(tree)
 
-    def to_the_right(self, tree):
-        return tree.x - self.x
+    def add_up_tree(self, tree):
+        self.up_trees.append(tree)
 
-    def above(self, tree):
-        return self.y - tree.y
+    def add_down_tree(self, tree):
+        self.down_trees.append(tree)
 
-    def below(self, tree):
-        return tree.y - self.y
+    def count_visible(self, tree_vec):
+        count = 0
+        for tree in tree_vec:
+            if tree.height < self.height:
+                count += 1
+            else:
+                return count
+        return count
 
-    def visible_direction(self, fnc):
-        return all([t.height < self.height for t in self.other_trees if fnc(t) > 0])
+    def visible_direction(self, tree_vec):
+        return len(tree_vec) == self.count_visible(tree_vec)
 
     def visible(self):
-        return self.visible_direction(self.to_the_left) or \
-               self.visible_direction(self.to_the_right) or \
-               self.visible_direction(self.above) or \
-               self.visible_direction(self.below)
+        return self.visible_direction(self.right_trees) or \
+               self.visible_direction(self.left_trees) or \
+               self.visible_direction(self.up_trees) or \
+               self.visible_direction(self.down_trees)
 
+    def scenic_score(self):
+        prod = 1
+        for tree_vec in [self.right_trees, self.left_trees, self.up_trees, self.down_trees]:
+            c = self.count_visible(tree_vec)
+            prod *= c + 1 * (c != len(tree_vec))
+        return prod
 
 trees = {}
 for y, line in enumerate(input.split('\n')):
@@ -53,14 +68,15 @@ for y, line in enumerate(input.split('\n')):
         tree = Tree(x, y, height)
         for i in range(x-1, -1, -1):
             tree_to_left = trees[(i, y)]
-            tree.add_tree(tree_to_left)
-            tree_to_left.add_tree(tree)
+            tree.add_left_tree(tree_to_left)
+            tree_to_left.add_right_tree(tree)
         for j in range(y-1, -1, -1):
-            tree_below = trees[(x, j)]
-            tree.add_tree(tree_below)
-            tree_below.add_tree(tree)
+            tree_above = trees[(x, j)]
+            tree.add_up_tree(tree_above)
+            tree_above.add_down_tree(tree)
         trees[(x, y)] = tree
 
 print(sum([tree.visible() for tree in trees.values()]))
 
 # part 2
+print(trees[sorted(trees, key=lambda pos: trees[pos].scenic_score(), reverse=True)[0]].scenic_score())
