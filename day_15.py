@@ -55,40 +55,49 @@ class Cavern:
         dx = sensor.manhattan_distance - abs(sensor.location[1] - y)
         return (sensor.location[0] - dx, sensor.location[0] + dx)
 
-    def unavailable_nodes(self, y):
+    def unavailable_nodes_and_skip(self, y):
         unavailable_spaces = [self.get_space(y, s) for s in self.filter_sensors(y)] + \
                              [(b[0], b[0]) for b in self.beacons if b[1] == y]
         unavailable_spaces.sort()
         final_spaces = []
+        min_overlap = 4000000
         while len(unavailable_spaces) > 0:
             space = unavailable_spaces.pop(0)
             while len(unavailable_spaces) > 0 and space[1] >= unavailable_spaces[0][0] - 1:
                 overlapping_space = unavailable_spaces.pop(0)
+                overlap = min(space[1], overlapping_space[1]) - max(space[0], overlapping_space[0])
+                if overlap < min_overlap and overlap > 0:
+                    min_overlap = overlap
                 if overlapping_space[1] > space[1]:
                     space = (space[0], overlapping_space[1])
             final_spaces.append(space)
-        return final_spaces
+        return final_spaces, min_overlap
 
 # test
 c = Cavern(test_input)
 N = 10
-unavailable_nodes = c.unavailable_nodes(N)
+unavailable_nodes, _ = c.unavailable_nodes_and_skip(N)
 print(unavailable_nodes[0][1] - unavailable_nodes[0][0])
 
-for i in range(2 * N):
-    unavailable_nodes = c.unavailable_nodes(i)
+i = 0
+while i < 2 * N:
+    unavailable_nodes, min_overlap = c.unavailable_nodes_and_skip(i)
     if len(unavailable_nodes) > 1:
         print(4000000 * (max([a[0] for a in unavailable_nodes]) - 1) + i)
+        break
+    i += min_overlap // 2 + 1
 
 # part 1
 c = Cavern(raw_input)
 N = 2000000
-unavailable_nodes = c.unavailable_nodes(N)
+unavailable_nodes, _ = c.unavailable_nodes_and_skip(N)
 print(unavailable_nodes[0][1] - unavailable_nodes[0][0])
 
 # part 2
-for i in range(2 * N):
-    unavailable_nodes = c.unavailable_nodes(i)
+i = 0
+while i < 2 * N:
+    unavailable_nodes, min_overlap = c.unavailable_nodes_and_skip(i)
     if len(unavailable_nodes) > 1:
         print(4000000 * (max([a[0] for a in unavailable_nodes]) - 1) + i)
         break
+    i += min_overlap // 2 + 1
